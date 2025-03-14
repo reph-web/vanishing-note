@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/icons/favicon.ico" type="image/x-icon">
+    <title>Vanishing Note</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h1><a href="/">📝 Vanishing Note</a></h1>
+    <div class="container">
+        <h2>✍️ Create a new note</h2>
+        <textarea id="note-content" placeholder="Type your note here"></textarea>
+        <label for="expiration">🗑️ Expiration :</label>
+        <select id="expiration">
+            <option value="5">5 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="360">6 hours</option>
+            <option value="1440">1 day</option>
+            <option value="10080">1 week</option>
+        </select>
+        <button onclick="createNote()">Create Note</button>
+        <input type="text" id="note-link" readonly onclick="copyLink()" style="display:none;">
+        <p id="msg"></p>
+    </div>
+
+    <script>
+        async function createNote() {
+            const text = document.getElementById("note-content").value.trim();
+            if (text === "") {
+                return;
+            }
+
+            const secretKey = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
+            const encrypted = CryptoJS.AES.encrypt(text, secretKey).toString();
+            const expiration = document.getElementById("expiration").value;
+
+            // Send the note to the server
+            const response = await fetch('/api/createNote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: encrypted, expiration })
+            });
+
+            // Handle the response, get the note UID and display the link
+            const data = await response.json();
+            if (response.ok) {
+                const noteURL = `${window.location.origin}/note/${data.uid}#${secretKey}`;
+                document.getElementById("note-link").value = noteURL;
+                document.getElementById("note-link").style.display = "block";
+                document.getElementById("msg").textContent = "Note created successfully ✅ Click on the link above to copy ⬆️";
+            } else {
+                 document.getElementById("msg").textContent = "Error creating note ❌";
+            }
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById("note-link");
+            linkInput.select();
+            document.execCommand("copy");
+            alert("Link copied to clipboard !");
+        }
+    </script>
+</body>
+</html>

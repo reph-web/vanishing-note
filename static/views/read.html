@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/icons/favicon.ico" type="image/x-icon">
+    <title>Vanishing Note</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h1><a href="/">📝 Vanishing Note</a></h1>
+    <div class="container">
+        <h2>Your Note 🔓</h2>
+        <pre id="note-content">Loading...</pre>
+    </div>
+
+    <script>
+        async function loadNote() {
+            const uid = window.location.pathname.split("/").pop();
+            const key = window.location.hash.substring(1);
+            const response = await fetch(`/api/getNote/${uid}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                const decrypted = CryptoJS.AES.decrypt(data.content, key).toString(CryptoJS.enc.Utf8);
+                document.getElementById("note-content").textContent = decrypted || "Decryption error ❌";
+            } else {
+                document.getElementById("note-content").textContent = "Expired note or invalid note ❌ ";
+            }
+        }
+        loadNote();
+    </script>
+</body>
+</html>
